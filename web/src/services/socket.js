@@ -10,18 +10,31 @@ class SocketService {
   /**
    * Connect to the Socket.IO server
    */
-  connect(url = "http://localhost:3001") {
+  connect(url = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001") {
     try {
       console.log(`🔌 Connecting to Socket.IO server: ${url}`);
 
-      this.socket = io(url, {
+      // Configure options based on protocol
+      const isHttps = url.startsWith('https://');
+      const socketOptions = {
         transports: ["websocket", "polling"],
         timeout: 5000,
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
         forceNew: true,
-      });
+      };
+
+      // For HTTPS connections, add SSL-specific options
+      if (isHttps) {
+        console.log('🔒 HTTPS detected, configuring for secure connection');
+        socketOptions.secure = true;
+        socketOptions.rejectUnauthorized = false; // Allow self-signed certificates in development
+        socketOptions.upgrade = true;
+        socketOptions.rememberUpgrade = true;
+      }
+
+      this.socket = io(url, socketOptions);
 
       this.setupEventHandlers();
       return this.socket;

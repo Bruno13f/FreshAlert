@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import socketService from "../services/socket";
 
-export const useSocket = (serverUrl = "http://localhost:3001") => {
+export const useSocket = (
+  serverUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001"
+) => {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
   const [socket, setSocket] = useState(null);
