@@ -11,15 +11,37 @@ import {
 const router = express.Router();
 
 /**
- * GET /atividades - Fetch all activities
+ * GET /atividades - Fetch all activities (with optional linha_id filter)
  */
 router.get("/", async (req, res) => {
   try {
+    const { linha_id } = req.query;
     const client = getDBClient();
-    const query = "SELECT * FROM atividades ORDER BY id ASC";
-    const result = await client.query(query);
 
-    console.log(`📋 Fetched ${result.rows.length} atividades`);
+    let query = "SELECT * FROM atividades";
+    let values = [];
+
+    // Add filter by linha_id if provided
+    if (linha_id !== undefined && linha_id !== "") {
+      // Validate linha_id parameter
+      const linhaIdInt = parseInt(linha_id);
+      if (isNaN(linhaIdInt) || linhaIdInt <= 0) {
+        const response = validationErrorResponse(
+          "linha_id must be a positive integer"
+        );
+        return sendResponse(res, response);
+      }
+
+      query += " WHERE linha_id = $1";
+      values.push(linhaIdInt);
+    }
+
+    query += " ORDER BY id ASC";
+
+    const result = await client.query(query, values);
+
+    const filterText = linha_id ? ` for linha_id ${linha_id}` : "";
+    console.log(`📋 Fetched ${result.rows.length} atividades${filterText}`);
 
     const response = successResponse(result.rows);
     sendResponse(res, response);
