@@ -1,0 +1,22 @@
+meta {
+  name: Create Activities
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:3000/atividades
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "linha_id": 2,
+    "is_fresh": true
+  }
+}
+
+settings {
+  encodeUrl: true
+}
