@@ -26,9 +26,15 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || `http://localhost:${PORT}`,
-    methods: ["GET", "POST"],
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["*"],
+    credentials: false, // Set to false when using origin: "*"
   },
+  allowEIO3: true,
+  transports: ["websocket", "polling"],
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 /**
@@ -43,10 +49,24 @@ async function startServer() {
     setupMiddleware(app);
 
     // Setup routes
-    app.use("/", routes);
+    app.use((req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      res.header("Access-Control-Allow-Headers", "*");
+      if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+      } else {
+        next();
+      }
+    });
 
     // Setup Socket.IO handlers
     setupSocketHandlers(io);
+
+    app.use("/", routes);
 
     // Setup error handling
     setup404Handler(app);
