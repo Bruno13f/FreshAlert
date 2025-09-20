@@ -1,17 +1,20 @@
 import './App.css';
 import Chatbot from './components/Chatbot';
+import ThreeStage from './components/ThreeStage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header" style={{ minHeight: '0' }}>
-        <h1>FreshAlert Chat</h1>
-      </header>
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
-        <div style={{ width: '100%', maxWidth: 720 }}>
-          <Chatbot />
+    <div className="App hero">
+      <div className="hero-content">
+        <div className="branding">
+          <h1>FreshAlert</h1>
+          <p>Deteção inteligente e visual de frescura alimentar</p>
+        </div>
+        <div className="stage-wrap">
+          <ThreeStage />
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 }
