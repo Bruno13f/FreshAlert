@@ -1,0 +1,54 @@
+import { Link, useLocation } from "react-router-dom";
+import { ScanLine, Sparkles } from "lucide-react";
+
+const navItems = [
+	{ path: "/assistant", icon: <Sparkles className="size-5.5" />, index: 0 },
+	{ path: "/scan", icon: <ScanLine className="size-5.5" />, index: 1 },
+];
+
+function Navbar() {
+	const location = useLocation();
+
+	let activeIndex =
+		navItems.find((item) => item.path === location.pathname)?.index ?? 0;
+
+	return (  
+		<div
+			className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-900 w-[70%] bg-background/90 shadow-lg rounded-[3rem] p-1"
+		>
+			<div className="relative h-[30px] w-full">
+				{/* Sliding rectangle for active icon */}
+				<div
+					className="absolute top-0 h-full w-1/2 rounded-[3rem] transition-transform duration-300"
+					style={{
+						transform: `translateX(${activeIndex * 100}%)`,
+						backgroundColor: "#f7fbf2",
+					}}
+				/>
+				<div className="grid h-full grid-cols-2 font-medium relative">
+					{navItems.map(({ path, icon }, index) => {
+						const isActive = location.pathname === path;
+
+						return (
+							<Link
+								key={path}
+								to={path}
+								className="flex items-center justify-center rounded-full"
+							>
+								<div
+									className={`stroke-custom-thin flex items-center justify-center rounded-full transition-colors duration-300 ${
+										isActive ? "text-primary" : "text-zinc-600"
+									}`}
+								>
+									{icon}
+								</div>
+							</Link>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export default Navbar;
