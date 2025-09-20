@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useSocket } from "../hooks/useSocket";
 import "./SocketStatus.css";
 
-const SocketStatus = () => {
+const SocketStatus = ({ onNewAtividade }) => {
   const { connected, error, joinLinha, leaveLinha, ping, emit, on } =
     useSocket();
   const [currentLinha, setCurrentLinha] = useState("");
@@ -13,12 +13,20 @@ const SocketStatus = () => {
   React.useEffect(() => {
     on("atividade:new", (atividade) => {
       setAtividades((prev) => [atividade, ...prev.slice(0, 4)]); // Keep last 5
+      // Forward to parent component for processing
+      if (onNewAtividade) {
+        onNewAtividade(atividade);
+      }
     });
 
     on("atividade:created", (atividade) => {
       setAtividades((prev) => [atividade, ...prev.slice(0, 4)]); // Keep last 5
+      // Forward to parent component for processing
+      if (onNewAtividade) {
+        onNewAtividade(atividade);
+      }
     });
-  }, [on]);
+  }, [on, onNewAtividade]);
 
   const handleJoinLinha = () => {
     if (currentLinha && !isNaN(parseInt(currentLinha))) {
@@ -63,6 +71,7 @@ const SocketStatus = () => {
 
       {connected && (
         <div className="socket-controls">
+          
           {atividades.length > 0 && (
             <div className="recent-atividades">
               <h4>📋 Recent Atividades</h4>

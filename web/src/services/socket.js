@@ -14,14 +14,32 @@ class SocketService {
     try {
       console.log(`🔌 Connecting to Socket.IO server: ${url}`);
 
-      this.socket = io(url, {
-        transports: ["websocket", "polling"],
-        timeout: 5000,
+      // Configure options based on protocol
+      const isHttps = url.startsWith("https://");
+      const socketOptions = {
+        transports: ["polling", "websocket"], // Try polling first for HTTPS
+        timeout: 10000,
         reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+        reconnectionAttempts: 10,
         forceNew: true,
-      });
+      };
+
+      // For HTTPS connections, add SSL-specific options
+      if (isHttps) {
+        console.log("🔒 HTTPS detected, configuring for secure connection");
+        socketOptions.secure = true;
+        socketOptions.upgrade = true;
+        socketOptions.rememberUpgrade = false; // Don't remember upgrade for self-signed certs
+        // For development with self-signed certificates, be more lenient
+        socketOptions.rejectUnauthorized = false;
+        socketOptions.withCredentials = false;
+        // Start with polling and upgrade to websocket after connection
+        socketOptions.transports = ["polling"];
+        socketOptions.upgradeTimeout = 30000;
+      }
+
+      this.socket = io(url, socketOptions);
 
       this.setupEventHandlers();
       return this.socket;
