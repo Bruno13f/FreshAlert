@@ -1,35 +1,60 @@
+import { useState, useEffect } from "react";
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import AssistantPage from "./pages/AssistantPage";
 import ScanPage from "./pages/ScanPage";
 import Navbar from "./components/navbar";
-import { Header } from "./components/header";
+import * as tf from "@tensorflow/tfjs";
+import { Toaster } from 'react-hot-toast';
 
-//import wallpaper from "./assets/490d6d4576ebdbc3d8df6d7a6ea7346f.jpg"; // Import the wallpaper
+import "@tensorflow/tfjs-backend-wasm";
+import "@tensorflow/tfjs-backend-webgl";
 
 function App() {
+  const [model, setModel] = useState<tf.GraphModel | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true);
+
+        // Choose backend: wasm or webgl
+        await tf.setBackend("wasm");
+        await tf.ready();
+
+        // Load TensorFlow.js model from public/model/
+        const loadedModel = await tf.loadGraphModel("/model/model.json");
+        setModel(loadedModel);
+        window.history.pushState({}, "", "/assistant");
+        console.log("✅ TensorFlow.js model loaded!");
+      } catch (error) {
+        console.error("❌ Error loading TensorFlow.js model:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, []);
 
   return (
-    <div
-      className="min-h-screen w-full bg-background font-roboto-flex overflow-x-hidden relative"
-      // style={{ backgroundImage: `url(${wallpaper})`, backgroundSize: "cover", backgroundPosition: "center" }} Set the wallpaper as background
-    >
-      {/* LoadingScreen stays always visible */}
-      {/* <div
-        className={`
-          absolute inset-0 z-10
-        `}
-      >
-        <LoadingScreen />
-      </div> */}
-      <BrowserRouter>
-        <Routes>
-          <Route path="/assistant" element={<AssistantPage />} />
-          <Route path="/scan" element={<ScanPage />} />
-        </Routes>
-        <Navbar />
-      </BrowserRouter>
+    <div className="min-h-screen w-full bg-background font-roboto-flex overflow-x-hidden relative">
+      <Toaster />
+      {loading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-background">
+          <div className="w-12 h-12 border-4 border-t-transparent border-primary rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <BrowserRouter>
+          <Routes>
+            <Route path="/assistant" element={<AssistantPage />} />
+            {model && <Route path="/scan" element={<ScanPage model={model} />} />}
+          </Routes>
+          <Navbar disabled={loading} />
+        </BrowserRouter>
+      )}
     </div>
   );
 }
 
-export default App
+export default App;

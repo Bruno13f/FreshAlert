@@ -6,7 +6,7 @@ const navItems = [
 	{ path: "/scan", icon: <ScanLine className="size-5.5" />, index: 1 },
 ];
 
-export function Navbar() {
+export function Navbar({ disabled }: { disabled: boolean }) {
 	const location = useLocation();
 
 	let activeIndex =
@@ -33,8 +33,8 @@ export function Navbar() {
 						return (
 							<Link
 								key={path}
-								to={path}
-								className="flex items-center justify-center rounded-full"
+								to={disabled ? "#" : path}
+								className={`flex items-center justify-center rounded-full ${disabled ? "pointer-events-none opacity-50" : ""}`}
 							>
 								<div
 									className={`stroke-custom-thin flex items-center justify-center rounded-full transition-colors duration-300 ${

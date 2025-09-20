@@ -1,56 +1,132 @@
 import React, { useState, useRef } from "react";
 import { Camera } from "react-camera-pro";
 import { Button } from "./ui/button";
+import * as tf from "@tensorflow/tfjs";
+import toast from "react-hot-toast";
+import { postData } from '../services/api';
 
-const CameraComponent = () => {
+const CameraComponent = ({ model }: { model: tf.GraphModel }) => {
   const camera = useRef<any>(null);
   const [image, setImage] = useState<string | null>(null);
 
-  const handleTakePhoto = () => {
-    if (camera.current) {
-      try {
-        const photo = camera.current.takePhoto();
-        const image = new Image();
-        image.src = photo;
+  const handleTakePhoto = (): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      if (camera.current) {
+        try {
+          const photo = camera.current.takePhoto();
+          const image = new Image();
+          image.src = photo;
 
-        image.onload = () => {
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d");
+          image.onload = () => {
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
 
-          if (context) {
-            // Set canvas dimensions to match the visualizer (square with rounded corners)
-            const visualizerSize = 256; // 64 * 4 (tailwind w-64 is 16rem, which is 256px)
-            canvas.width = visualizerSize;
-            canvas.height = visualizerSize;
+            if (context) {
+              // Set canvas dimensions to match the visualizer (square with rounded corners)
+              const visualizerSize = 256; // 64 * 4 (tailwind w-64 is 16rem, which is 256px)
+              canvas.width = visualizerSize;
+              canvas.height = visualizerSize;
 
-            // Calculate cropping coordinates (centered square, accounting for mt-20)
-            const cropX = (image.width - visualizerSize) / 2;
-            const cropY = (image.height - visualizerSize) / 2 - 80; // mt-20 corresponds to 80px
+              // Calculate cropping coordinates (centered square, accounting for mt-20)
+              const cropX = (image.width - visualizerSize) / 2;
+              const cropY = (image.height - visualizerSize) / 2 - 80; // mt-20 corresponds to 80px
 
-            // Draw the cropped image onto the canvas
-            context.drawImage(
-              image,
-              cropX,
-              cropY,
-              visualizerSize,
-              visualizerSize,
-              0,
-              0,
-              visualizerSize,
-              visualizerSize
-            );
+              // Draw the cropped image onto the canvas
+              context.drawImage(
+                image,
+                cropX,
+                cropY,
+                visualizerSize,
+                visualizerSize,
+                0,
+                0,
+                visualizerSize,
+                visualizerSize
+              );
 
-            // Convert the canvas content to a data URL
-            const croppedPhoto = canvas.toDataURL("image/jpeg");
-            setImage(croppedPhoto);
-          }
-        };
-      } catch (error) {
-        console.error("Error taking photo:", error);
+              // Convert the canvas content to a data URL
+              const croppedPhoto = canvas.toDataURL("image/jpeg");
+              setImage(croppedPhoto);
+
+              // Resize the canvas content to match the model's expected input size (128x128)
+              const resizedCanvas = document.createElement("canvas");
+              const resizedContext = resizedCanvas.getContext("2d");
+              const targetSize = 128; // Model expects 128x128
+              resizedCanvas.width = targetSize;
+              resizedCanvas.height = targetSize;
+
+              if (resizedContext) {
+                resizedContext.drawImage(
+                  canvas,
+                  0,
+                  0,
+                  visualizerSize,
+                  visualizerSize,
+                  0,
+                  0,
+                  targetSize,
+                  targetSize
+                );
+
+                // Convert the resized canvas to a tensor
+                const tensor = tf.browser.fromPixels(resizedCanvas);
+
+                // Ensure the tensor has the correct dtype (float32)
+                const floatTensor = tensor.toFloat();
+                model.executeAsync(floatTensor.expandDims(0)).then(async (predictions) => {
+                  if (Array.isArray(predictions)) {
+                    console.error("Unexpected array of tensors. Ensure the model outputs a single tensor.");
+                    reject(false);
+                    return;
+                  }
+
+                  // Convert Float32Array to a regular array for mapping
+                  const predictionArray = Array.from(predictions.dataSync() as Float32Array);
+                  const freshPrediction = predictionArray[0] * 100;
+                  const rottenPrediction = predictionArray[1] * 100;
+
+                  if (freshPrediction > 90) {
+                    console.log("Detected fresh produce with probability:", freshPrediction);
+                    await postData({ linha_id: 1, is_fresh: true });
+                    resolve(true);
+                  } else {
+                    console.log("Detected rotten produce with probability:", rottenPrediction);
+                    await postData({ linha_id: 1, is_fresh: false });
+                    throw new Error("Rotten produce detected");
+                  }
+                }).catch((error) => {
+                  console.error("Error during model execution:", error);
+                  reject(false);
+                });
+              } else {
+                reject(false);
+              }
+            } else {
+              reject(false);
+            }
+          };
+
+          image.onerror = () => {
+            reject(false);
+          };
+        } catch (error) {
+          console.error("Error taking photo:", error);
+          reject(false);
+        }
+      } else {
+        console.error("Camera is not initialized.");
+        reject(false);
       }
-    } else {
-      console.error("Camera is not initialized.");
-    }
+    });
+  };
+
+  const handleToast = () => {
+    const promise = handleTakePhoto();
+    toast.promise(promise, {
+      loading: 'Scanning...',
+      success: 'Fresh produce detected!',
+      error: 'Rotten produce detected.',
+    });
   };
 
   return (
@@ -67,7 +143,7 @@ const CameraComponent = () => {
         }}
       />
       <Button
-        onClick={handleTakePhoto}
+        onClick={handleToast}
         className="absolute bottom-0 mb-20 px-4 py-2 bg-primary/90 
         text-background rounded-xl z-900 font-semibold text-base"
       >
