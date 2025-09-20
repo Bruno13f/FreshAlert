@@ -1,0 +1,25 @@
+meta {
+  name: Chat Message
+  type: http
+  seq: 8
+}
+
+post {
+  url: http://localhost:3000/chat/message
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "message": "O tiago é gay?"
+  }
+}
+
+settings {
+  encodeUrl: false
+}

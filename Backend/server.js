@@ -66,6 +66,12 @@ async function startServer() {
       console.log(`   GET  /atividades - Fetch all activities`);
       console.log(`   POST /atividades - Create new activity`);
       console.log(`   GET  /atividades/:id - Get specific activity`);
+      console.log(`🤖 Chat endpoints:`);
+      console.log(`   GET  /chat/status      - Chat service status`);
+      console.log(`   GET  /chat/debug       - Debug configuration`);
+      console.log(`   GET  /chat/test        - Test Bedrock connection`);
+      console.log(`   POST /chat/message     - Send single message`);
+      console.log(`   POST /chat/conversation - Send conversation`);
       console.log(`🔌 Socket events:`);
       console.log(`   connection           - Client connected`);
       console.log(`   join:linha          - Join linha room`);
