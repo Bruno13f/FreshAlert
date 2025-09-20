@@ -75,12 +75,33 @@ const CameraComponent = () => {
       </Button>
       {image && 
       <div 
-        className="absolute top-0 left-0 w-full h-full bg-zinc-900/80 flex items-center justify-center z-999"
+        className="absolute inset-0 flex items-center justify-center z-999 bg-zinc-900/80"
         onClick={() => setImage(null)}
       >
-        <img src={image} alt="Taken photo" className="border-2 mb-4 rounded-lg" />
+        <div className="relative w-64 h-64 rounded-lg overflow-hidden border-3 border-background"> {/* Visualizer container with gradient border */}
+          <img src={image} alt="Taken photo" className="w-full h-full object-cover" />
+          {/* Scanning animation */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#6cf2ca]/50 to-transparent animate-scan"></div>
+        </div>
       </div>
       }
+
+      <style>
+        {`
+        @keyframes scan {
+          0% {
+            transform: translateY(-100%);
+          }
+          100% {
+            transform: translateY(100%);
+          }
+        }
+        .animate-scan {
+          animation: scan 2s infinite;
+        }
+        `}
+      </style>
+
       <div className="absolute inset-0 flex items-center justify-center mb-30">
         <div className="relative w-64 h-64 rounded-lg">  {/* Added rounded-lg for rounded corners */}
           {/* Top-left corner */}
