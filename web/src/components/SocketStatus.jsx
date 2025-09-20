@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useSocket } from "../hooks/useSocket";
 import "./SocketStatus.css";
 
-const SocketStatus = ({ onNewAtividade }) => {
+const SocketStatus = () => {
   const { connected, error, joinLinha, leaveLinha, ping, emit, on } =
     useSocket();
   const [currentLinha, setCurrentLinha] = useState("");
@@ -11,35 +11,14 @@ const SocketStatus = ({ onNewAtividade }) => {
 
   // Listen for atividade events
   React.useEffect(() => {
-    const handleNewAtividade = (atividade) => {
-      console.log("🆕 New atividade received via socket:", atividade);
+    on("atividade:new", (atividade) => {
       setAtividades((prev) => [atividade, ...prev.slice(0, 4)]); // Keep last 5
+    });
 
-      // Pass to parent component for ThreeStage integration
-      if (onNewAtividade) {
-        onNewAtividade(atividade);
-      }
-    };
-
-    const handleAtividadeCreated = (atividade) => {
-      console.log("✅ Atividade created in linha:", atividade);
+    on("atividade:created", (atividade) => {
       setAtividades((prev) => [atividade, ...prev.slice(0, 4)]); // Keep last 5
-
-      // Pass to parent component for ThreeStage integration
-      if (onNewAtividade) {
-        onNewAtividade(atividade);
-      }
-    };
-
-    on("atividade:new", handleNewAtividade);
-    on("atividade:created", handleAtividadeCreated);
-
-    // Cleanup function to remove listeners
-    return () => {
-      // Note: You might need to implement an 'off' method in your socket service
-      // for proper cleanup, but for now this ensures fresh listeners
-    };
-  }, [on, onNewAtividade]);
+    });
+  }, [on]);
 
   const handleJoinLinha = () => {
     if (currentLinha && !isNaN(parseInt(currentLinha))) {
@@ -61,32 +40,9 @@ const SocketStatus = ({ onNewAtividade }) => {
 
   const createTestAtividade = () => {
     if (joinedLinha) {
-      const isFresh = Math.random() > 0.5;
-      console.log(`🧪 Creating test atividade with is_fresh: ${isFresh}`);
-
       emit("atividade:create", {
         linha_id: joinedLinha,
-        is_fresh: isFresh,
-      });
-    }
-  };
-
-  const createFreshAtividade = () => {
-    if (joinedLinha) {
-      console.log("🟢 Creating FRESH test atividade");
-      emit("atividade:create", {
-        linha_id: joinedLinha,
-        is_fresh: true,
-      });
-    }
-  };
-
-  const createSpoiledAtividade = () => {
-    if (joinedLinha) {
-      console.log("🔴 Creating SPOILED test atividade");
-      emit("atividade:create", {
-        linha_id: joinedLinha,
-        is_fresh: false,
+        is_fresh: Math.random() > 0.5,
       });
     }
   };
@@ -107,55 +63,6 @@ const SocketStatus = ({ onNewAtividade }) => {
 
       {connected && (
         <div className="socket-controls">
-          <div className="control-group">
-            <button onClick={handlePing} className="ping-btn">
-              🏓 Ping Server
-            </button>
-          </div>
-
-          <div className="control-group">
-            <div className="linha-controls">
-              <input
-                type="number"
-                placeholder="Linha ID"
-                value={currentLinha}
-                onChange={(e) => setCurrentLinha(e.target.value)}
-                className="linha-input"
-              />
-              <button
-                onClick={handleJoinLinha}
-                disabled={!currentLinha || joinedLinha}
-                className="join-btn">
-                📡 Join Linha
-              </button>
-              {joinedLinha && (
-                <button onClick={handleLeaveLinha} className="leave-btn">
-                  👋 Leave Linha {joinedLinha}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {joinedLinha && (
-            <div className="control-group">
-              <button onClick={createTestAtividade} className="test-btn">
-                🧪 Create Random Test
-              </button>
-              <div className="test-buttons">
-                <button
-                  onClick={createFreshAtividade}
-                  className="test-btn fresh">
-                  🟢 Test Fresh
-                </button>
-                <button
-                  onClick={createSpoiledAtividade}
-                  className="test-btn spoiled">
-                  🔴 Test Spoiled
-                </button>
-              </div>
-            </div>
-          )}
-
           {atividades.length > 0 && (
             <div className="recent-atividades">
               <h4>📋 Recent Atividades</h4>
@@ -168,17 +75,9 @@ const SocketStatus = ({ onNewAtividade }) => {
                     </span>
                     <span
                       className={`atividade-fresh ${
-                        atividade.is_fresh === true
-                          ? "fresh"
-                          : atividade.is_fresh === false
-                          ? "not-fresh"
-                          : "unknown"
+                        atividade.is_fresh ? "fresh" : "not-fresh"
                       }`}>
-                      {atividade.is_fresh === true
-                        ? "🟢 Fresh"
-                        : atividade.is_fresh === false
-                        ? "🔴 Not Fresh"
-                        : "❓ Unknown"}
+                      {atividade.is_fresh ? "🟢 Fresh" : "🔴 Not Fresh"}
                     </span>
                   </div>
                 ))}
