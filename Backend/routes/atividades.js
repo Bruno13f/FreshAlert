@@ -7,6 +7,7 @@ import {
   handleDatabaseError,
   sendResponse,
 } from "../utils/response.js";
+import { io } from "../server.js"; // Import io for socket emissions
 
 const router = express.Router();
 
@@ -88,6 +89,20 @@ router.post("/", async (req, res) => {
     const newAtividade = result.rows[0];
 
     console.log(`✅ Created new atividade with ID: ${newAtividade.id}`);
+
+    // Emit socket events for real-time updates
+    if (io) {
+      // Emit to specific linha room
+      const room = `linha_${linha_id}`;
+      io.to(room).emit("atividade:created", newAtividade);
+
+      // Emit to all clients
+      io.emit("atividade:new", newAtividade);
+
+      console.log(
+        `📡 Socket events emitted for new atividade: ${newAtividade.id}`
+      );
+    }
 
     const response = successResponse(
       newAtividade,

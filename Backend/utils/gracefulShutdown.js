@@ -1,5 +1,16 @@
 import { closeDB } from "../config/database.js";
 
+let httpServer = null;
+let socketIO = null;
+
+/**
+ * Set server instances for graceful shutdown
+ */
+export function setServerInstances(server, io) {
+  httpServer = server;
+  socketIO = io;
+}
+
 /**
  * Graceful shutdown handler
  */
@@ -7,6 +18,26 @@ async function gracefulShutdown(signal) {
   console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
 
   try {
+    // Close Socket.IO server first
+    if (socketIO) {
+      console.log("🔌 Closing Socket.IO server...");
+      socketIO.close();
+      console.log("✅ Socket.IO server closed");
+    }
+
+    // Close HTTP server
+    if (httpServer) {
+      console.log("🌐 Closing HTTP server...");
+      httpServer.close((err) => {
+        if (err) {
+          console.error("❌ Error closing HTTP server:", err);
+        } else {
+          console.log("✅ HTTP server closed");
+        }
+      });
+    }
+
+    // Close database connection
     await closeDB();
     console.log("✅ Graceful shutdown completed");
     process.exit(0);
