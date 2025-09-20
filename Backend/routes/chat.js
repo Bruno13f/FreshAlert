@@ -14,6 +14,7 @@ import {
   errorResponse,
   sendResponse,
 } from "../utils/response.js";
+import { getAllAtividades, getRecentAtividades } from "./atividades.js";
 
 const router = express.Router();
 
@@ -31,13 +32,33 @@ router.post("/message", async (req, res) => {
 
     const { message, systemPrompt } = req.body;
 
-    console.log(`🤖 Processing chat message: "${message.substring(0, 50)}..."`);
+    // Grab recent activities from the DB to include in the prompt
+    const activities = await getRecentAtividades(undefined, 20); // Get last 20 activities
 
-    // Send message to Bedrock
-    const result = await sendMessageToBedrock(
-      message,
-      systemPrompt || process.env.SYSTEM_PROMPT
+    // Format activities for the AI context
+    const activitiesContext =
+      activities.length > 0
+        ? `\n\nRecent activities context:\n${activities
+            .map(
+              (a) =>
+                `- Activity ${a.id}: Linha ${a.linha_id}, Fresh: ${
+                  a.is_fresh ? "Yes" : "No"
+                }, Verified: ${a.verified_at}`
+            )
+            .join("\n")}`
+        : "\n\nNo recent activities available.";
+
+    console.log(`🤖 Processing chat message: "${message.substring(0, 50)}..."`);
+    console.log(
+      `📋 Including ${activities.length} recent activities in context`
     );
+
+    // Enhanced system prompt with activities context
+    const enhancedSystemPrompt =
+      (systemPrompt || process.env.SYSTEM_PROMPT) + activitiesContext;
+
+    // Send message to Bedrock with enhanced context
+    const result = await sendMessageToBedrock(message, enhancedSystemPrompt);
 
     const response = successResponse(result, "Message processed successfully");
     sendResponse(res, response);
@@ -67,12 +88,35 @@ router.post("/conversation", async (req, res) => {
 
     const { messages, systemPrompt } = req.body;
 
-    console.log(`🤖 Processing conversation with ${messages.length} messages`);
+    // Grab recent activities from the DB to include in the prompt
+    const activities = await getRecentAtividades(undefined, 20); // Get last 20 activities
 
-    // Send conversation to Bedrock
+    // Format activities for the AI context
+    const activitiesContext =
+      activities.length > 0
+        ? `\n\nRecent activities context:\n${activities
+            .map(
+              (a) =>
+                `- Activity ${a.id}: Linha ${a.linha_id}, Fresh: ${
+                  a.is_fresh ? "Yes" : "No"
+                }, Verified: ${a.verified_at}`
+            )
+            .join("\n")}`
+        : "\n\nNo recent activities available.";
+
+    console.log(`🤖 Processing conversation with ${messages.length} messages`);
+    console.log(
+      `📋 Including ${activities.length} recent activities in context`
+    );
+
+    // Enhanced system prompt with activities context
+    const enhancedSystemPrompt =
+      (systemPrompt || process.env.SYSTEM_PROMPT) + activitiesContext;
+
+    // Send conversation to Bedrock with enhanced context
     const result = await sendConversationToBedrock(
       messages,
-      systemPrompt || process.env.SYSTEM_PROMPT
+      enhancedSystemPrompt
     );
 
     const response = successResponse(

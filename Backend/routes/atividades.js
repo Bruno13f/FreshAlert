@@ -12,39 +12,90 @@ import { io } from "../server.js"; // Import io for socket emissions
 const router = express.Router();
 
 /**
- * GET /atividades - Fetch all activities (with optional linha_id filter)
+ * Helper function to get all activities (can be used by other modules)
+ * @param {number|undefined} linha_id - Optional linha_id filter
+ * @returns {Promise<Array>} Array of atividades
  */
-router.get("/", async (req, res) => {
+export async function getAllAtividades(linha_id = undefined) {
   try {
-    const { linha_id } = req.query;
     const client = getDBClient();
 
     let query = "SELECT * FROM atividades";
     let values = [];
 
     // Add filter by linha_id if provided
-    if (linha_id !== undefined && linha_id !== "") {
+    if (linha_id !== undefined && linha_id !== null && linha_id !== "") {
       // Validate linha_id parameter
       const linhaIdInt = parseInt(linha_id);
       if (isNaN(linhaIdInt) || linhaIdInt <= 0) {
-        const response = validationErrorResponse(
-          "linha_id must be a positive integer"
-        );
-        return sendResponse(res, response);
+        throw new Error("linha_id must be a positive integer");
       }
 
       query += " WHERE linha_id = $1";
       values.push(linhaIdInt);
     }
 
-    query += " ORDER BY id ASC";
+    query += " ORDER BY id DESC"; // Most recent first
 
     const result = await client.query(query, values);
 
     const filterText = linha_id ? ` for linha_id ${linha_id}` : "";
-    console.log(`📋 Fetched ${result.rows.length} atividades${filterText}`);
+    console.log(`📋 Retrieved ${result.rows.length} atividades${filterText}`);
 
-    const response = successResponse(result.rows);
+    return result.rows;
+  } catch (error) {
+    console.error("❌ Error getting atividades:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to get recent activities (last 10)
+ * @param {number|undefined} linha_id - Optional linha_id filter
+ * @returns {Promise<Array>} Array of recent atividades
+ */
+export async function getRecentAtividades(linha_id = undefined, limit = 10) {
+  try {
+    const client = getDBClient();
+
+    let query = "SELECT * FROM atividades";
+    let values = [];
+
+    // Add filter by linha_id if provided
+    if (linha_id !== undefined && linha_id !== null && linha_id !== "") {
+      const linhaIdInt = parseInt(linha_id);
+      if (isNaN(linhaIdInt) || linhaIdInt <= 0) {
+        throw new Error("linha_id must be a positive integer");
+      }
+
+      query += " WHERE linha_id = $1";
+      values.push(linhaIdInt);
+    }
+
+    query += " ORDER BY id DESC LIMIT $" + (values.length + 1);
+    values.push(limit);
+
+    const result = await client.query(query, values);
+
+    console.log(`📋 Retrieved ${result.rows.length} recent atividades`);
+
+    return result.rows;
+  } catch (error) {
+    console.error("❌ Error getting recent atividades:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * GET /atividades - Fetch all activities (with optional linha_id filter)
+ */
+router.get("/", async (req, res) => {
+  try {
+    const { linha_id } = req.query;
+
+    const atividades = await getAllAtividades(linha_id);
+
+    const response = successResponse(atividades);
     sendResponse(res, response);
   } catch (error) {
     console.error("❌ Error fetching atividades:", error.message);
