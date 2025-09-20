@@ -1,10 +1,10 @@
 import CameraComponent from "@/components/camera-component";
+import * as tf from "@tensorflow/tfjs";
 
-function ScanPage() {
-
+function ScanPage({ model }: { model: tf.GraphModel }) {
   return (
     <main className="max-w-lg mx-auto w-full">
-      <CameraComponent/>
+      <CameraComponent model={model} />
     </main>
   );
 }
