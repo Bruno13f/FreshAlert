@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 console.log("🧪 Testing Socket.IO connection...\n");
 
-const socket = io("http://localhost:3000");
+const socket = io("http://localhost:3001");
 
 // Connection events
 socket.on("connect", () => {
