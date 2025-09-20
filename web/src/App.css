@@ -106,6 +106,40 @@
   display: block;
 }
 
+.three-stage-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.three-stage-controls .btn-yes,
+.three-stage-controls .btn-no {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: #e6f1ff;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.three-stage-controls .btn-yes {
+  background: linear-gradient(180deg, #2ecc71, #27ae60);
+  border-color: rgba(46, 204, 113, 0.4);
+  color: #0b0f1d;
+}
+
+.three-stage-controls .btn-no {
+  background: linear-gradient(180deg, #ff7a7a, #f05252);
+  border-color: rgba(240, 82, 82, 0.4);
+  color: #fff;
+}
+
 /* --- Floating Chatbot widget --- */
 .chatbot-root {
   position: fixed;
