@@ -278,8 +278,34 @@ const ThreeStage = forwardRef(
       const textureCache = new Map();
       let manifestUrls = [];
       const meshToUrl = new WeakMap();
+      const meshToFreshness = new WeakMap(); // Track if each mesh shows fresh or rotten apple
 
-      const setMeshTexture = (mesh, texture, url) => {
+      // Generate apple image URLs dynamically
+      const generateAppleUrls = () => {
+        const urls = [];
+
+        // Add fresh apples (a_f001.png to a_f050.png)
+        for (let i = 1; i <= 50; i++) {
+          const paddedNum = i.toString().padStart(3, "0");
+          urls.push({
+            url: `/apples/a_f${paddedNum}.png`,
+            isFresh: true,
+          });
+        }
+
+        // Add rotten apples (a_r002.png to a_r049.png)
+        for (let i = 2; i <= 49; i++) {
+          const paddedNum = i.toString().padStart(3, "0");
+          urls.push({
+            url: `/apples/a_r${paddedNum}.png`,
+            isFresh: false,
+          });
+        }
+
+        return urls;
+      };
+
+      const setMeshTexture = (mesh, texture, url, isFresh) => {
         if (
           !mesh.material ||
           !(mesh.material instanceof MeshStandardMaterial)
@@ -297,6 +323,7 @@ const ThreeStage = forwardRef(
         const aspect = img && img.height ? img.width / img.height : 1;
         mesh.scale.set(aspect, 1, 1);
         if (url) meshToUrl.set(mesh, url);
+        if (typeof isFresh === "boolean") meshToFreshness.set(mesh, isFresh);
       };
 
       const loadTexture = (url, onReady) => {
@@ -323,7 +350,7 @@ const ThreeStage = forwardRef(
         if (n === 0) return null;
         let idx = Math.floor(Math.random() * n);
         // Avoid immediate repeat when possible
-        if (n > 1 && manifestUrls[idx] === prevUrl) {
+        if (n > 1 && manifestUrls[idx].url === prevUrl) {
           idx = (idx + 1 + Math.floor(Math.random() * (n - 1))) % n;
         }
         return manifestUrls[idx];
@@ -332,10 +359,10 @@ const ThreeStage = forwardRef(
       const assignNextTextureToMesh = (mesh) => {
         if (!manifestUrls.length) return;
         const prevUrl = meshToUrl.get(mesh);
-        const url = pickRandomUrl(prevUrl);
-        if (!url) return;
-        loadTexture(url, (tex) => {
-          if (tex) setMeshTexture(mesh, tex, url);
+        const urlObj = pickRandomUrl(prevUrl);
+        if (!urlObj) return;
+        loadTexture(urlObj.url, (tex) => {
+          if (tex) setMeshTexture(mesh, tex, urlObj.url, urlObj.isFresh);
         });
       };
 
@@ -357,46 +384,49 @@ const ThreeStage = forwardRef(
         itemsRef.current = items;
       };
 
-      // Load manifest and initialize stream
-      fetch("/valid/manifest.json")
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then((urls) => {
-          manifestUrls = Array.isArray(urls) ? urls.filter(Boolean) : [];
-          if (!manifestUrls.length) throw new Error("empty");
-          createItemsWithInitialTextures();
-        })
-        .catch(() => {
-          // fallback to a single public image
-          loadTexture("/images.jpeg", (tex) => {
-            if (tex) {
-              manifestUrls = ["/images.jpeg"];
-              createItemsWithInitialTextures();
-            } else {
-              // Final fallback: boxes
-              boxGeometry = new BoxGeometry(
-                0.28 * scale,
-                0.18 * scale,
-                0.18 * scale
-              );
-              boxMaterial = new MeshStandardMaterial({
-                color: 0xb9773b,
-                roughness: 0.9,
-                metalness: 0.05,
-              });
-              const totalBoxes = 6;
-              for (let i = 0; i < totalBoxes; i++) {
-                const box = new Mesh(boxGeometry, boxMaterial);
-                const t = i / totalBoxes;
-                const startX = -usableLength / 2 + t * usableLength;
-                box.position.set(startX, 0, 0.06 * scale);
-                box.rotation.x = -0.15;
-                scene.add(box);
-                items.push(box);
-              }
-              itemsRef.current = items;
+      // Load apple images and initialize stream
+      console.log("🍎 Loading apple images from /apples/ folder...");
+      manifestUrls = generateAppleUrls();
+      console.log(
+        `🍎 Generated ${manifestUrls.length} apple URLs (${
+          manifestUrls.filter((a) => a.isFresh).length
+        } fresh, ${manifestUrls.filter((a) => !a.isFresh).length} rotten)`
+      );
+
+      if (manifestUrls.length > 0) {
+        createItemsWithInitialTextures();
+      } else {
+        // Fallback to single public image if no apples found
+        loadTexture("/images.jpeg", (tex) => {
+          if (tex) {
+            manifestUrls = [{ url: "/images.jpeg", isFresh: null }];
+            createItemsWithInitialTextures();
+          } else {
+            // Final fallback: boxes
+            boxGeometry = new BoxGeometry(
+              0.28 * scale,
+              0.18 * scale,
+              0.18 * scale
+            );
+            boxMaterial = new MeshStandardMaterial({
+              color: 0xb9773b,
+              roughness: 0.9,
+              metalness: 0.05,
+            });
+            const totalBoxes = 6;
+            for (let i = 0; i < totalBoxes; i++) {
+              const box = new Mesh(boxGeometry, boxMaterial);
+              const t = i / totalBoxes;
+              const startX = -usableLength / 2 + t * usableLength;
+              box.position.set(startX, 0, 0.06 * scale);
+              box.rotation.x = -0.15;
+              scene.add(box);
+              items.push(box);
             }
-          });
+            itemsRef.current = items;
+          }
         });
+      }
 
       // Fullscreen overlay (for zoom on pause)
       const overlayGeometry = new PlaneGeometry(1, 1);
@@ -563,7 +593,9 @@ const ThreeStage = forwardRef(
 
                   // Notify parent that an item is paused for approval
                   if (onItemPaused) {
-                    onItemPaused(mesh);
+                    const isFresh = meshToFreshness.get(mesh);
+                    const url = meshToUrl.get(mesh);
+                    onItemPaused(mesh, { isFresh, url });
                   }
                 } else {
                   pauseUntilT = nowT + Math.max(0, pauseSeconds);
@@ -705,26 +737,6 @@ const ThreeStage = forwardRef(
         <canvas className="three-stage-canvas" ref={canvasRef} />
         {awaitingChoice && (
           <div className="three-stage-controls">
-            <button
-              className="btn-yes"
-              onClick={() => {
-                resumeRef.current();
-                if (onItemProcessed) {
-                  onItemProcessed("accepted", pausedItemRef.current);
-                }
-              }}>
-              Sim
-            </button>
-            <button
-              className="btn-no"
-              onClick={() => {
-                rejectRef.current();
-                if (onItemProcessed) {
-                  onItemProcessed("rejected", pausedItemRef.current);
-                }
-              }}>
-              Não
-            </button>
           </div>
         )}
       </div>
