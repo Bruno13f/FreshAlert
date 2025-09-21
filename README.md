@@ -15,25 +15,46 @@ Refrigeration companies storing food for months before distribution face:
 
 ## 🚀 Solution
 
-- **🤖 AI Detection**: Custom VGG16 model classifies food as fresh/spoiled
+- **🤖 AI Detection**: Custom VGG16 model with transfer learning classifies food as fresh/spoiled
 - **📊 Real-time Analytics**: Track performance by supplier and production line
 - **🔄 Live Monitoring**: Conveyor belt visualization with instant decisions
 - **💬 AI Assistant**: Query system data in natural language
+
+## 🧠 AI Model Details
+
+Our custom computer vision model leverages transfer learning for optimal performance:
+
+- **Architecture**: VGG16 backbone with ImageNet pre-training
+- **Training Strategy**: Two-phase approach (feature extraction + fine-tuning)
+- **Input Size**: 128x128 RGB images for efficient processing
+- **Performance**: Optimized with mixed precision (FP16) and GPU acceleration
+- **Regularization**: Dropout layers, batch normalization, and early stopping
+- **Class Balancing**: Weighted training to handle imbalanced datasets
+- **Deployment**: TensorFlow Lite conversion for edge inference
+
+**Training Process:**
+
+1. **Feature Extraction**: Frozen VGG16 base with custom classifier head
+2. **Fine-tuning**: Unfreezing last 8 layers for domain-specific adaptation
+3. **Optimization**: Dynamic learning rate reduction and early stopping
 
 ## 🔧 Tech Stack
 
 **Backend**: Node.js, PostgreSQL, Socket.IO, TensorFlow Lite  
 **Frontend**: React, Three.js, Real-time WebSockets  
-**AI**: Custom VGG16 model, Computer Vision pipeline
+**AI**: Custom VGG16 model, Computer Vision pipeline, Mixed Precision training
 
 ## 🚀 Quick Start
 
 ```bash
 # Backend
-cd Backend && npm install && npm run dev
+cd Backend && pnpm install && node server.js
 
 # Frontend
 cd web && npm install && npm start
+
+# App
+cd App && pnpm install && pnpm run dev
 
 # Database
 psql -d database -f tables.sql
@@ -42,10 +63,11 @@ psql -d database -f tables.sql
 ## 💡 Key Features
 
 - **Real-time conveyor belt monitoring** with 3D visualization
-- **Automatic fresh/spoiled classification** using AI
+- **Automatic fresh/spoiled classification** using transfer learning
 - **Performance analytics** per supplier and production line
 - **AI chat assistant** for data queries
 - **HTTPS/WebSocket** real-time communication
+- **Edge deployment** with TensorFlow Lite optimization
 
 ## 📊 Business Impact
 
