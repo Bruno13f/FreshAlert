@@ -50,7 +50,7 @@ router.post("/message", async (req, res) => {
 
     let { message, systemPrompt } = req.body;
     message +=
-      ". Response de forma mais consisa possível, com apenas a resposta pretendida e uma pequena justificaçao apenas, em inglês.";
+      ". Response de forma mais consisa possível, com apenas a resposta pretendida e uma pequena justificaçao baseada nos dados usados para a resposta, mencionando que dados foram importantes para a decisão, em inglês.";
 
     // Grab recent activities from the DB to include in the prompt
     const activities = await getRecentAtividades(undefined, 20); // Get last 20 activities
