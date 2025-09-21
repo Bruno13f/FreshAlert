@@ -14,7 +14,7 @@ export function Navbar({ disabled }: { disabled: boolean }) {
 
 	return (  
 		<div
-			className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-999 w-[70%] bg-background/90 shadow-lg rounded-[3rem] p-1"
+			className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-999 w-[70%] bg-background/90 shadow-lg rounded-[3rem] p-1"
 		>
 			<div className="relative h-[30px] w-full">
 				{/* Sliding rectangle for active icon */}

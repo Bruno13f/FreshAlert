@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Camera } from "react-camera-pro";
 import { Button } from "./ui/button";
 import * as tf from "@tensorflow/tfjs";
@@ -88,14 +88,17 @@ const CameraComponent = ({ model }: { model: tf.GraphModel }) => {
                   if (freshPrediction > 90) {
                     console.log("Detected fresh produce with probability:", freshPrediction);
                     await postData({ linha_id: 1, is_fresh: true });
+                    setImage(null); // Remove image after successful verification
                     resolve(true);
                   } else {
                     console.log("Detected rotten produce with probability:", rottenPrediction);
                     await postData({ linha_id: 1, is_fresh: false });
+                    setImage(null); // Remove image after verification
                     throw new Error("Rotten produce detected");
                   }
                 }).catch((error) => {
                   console.error("Error during model execution:", error);
+                  setImage(null); // Remove image after error
                   reject(false);
                 });
               } else {
@@ -133,6 +136,7 @@ const CameraComponent = ({ model }: { model: tf.GraphModel }) => {
     <div className="flex flex-col items-center">
       <Camera
         ref={camera}
+        facingMode="environment"
         errorMessages={{
           noCameraAccessible:
             "No camera device accessible. Please connect your camera or try a different browser.",

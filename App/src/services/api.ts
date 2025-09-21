@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.127:3001'; // Replace with your API URL
+const API_URL = '/api'; // Use proxy instead of direct URL
 
 interface body {
     linha_id: number;
@@ -15,3 +15,13 @@ export const postData = async (data: body) => {
         throw error;
     }
 };
+
+export const postMessage = async (message: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/chat/message`, { message });
+        console.log(response);
+        return response.data.data.response;
+    } catch (error) {
+        throw error;
+    }
+}

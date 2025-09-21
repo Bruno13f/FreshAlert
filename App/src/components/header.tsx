@@ -2,11 +2,16 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
 
-export function Header() {
+interface HeaderProps {
+	onReset: () => void;
+}
+
+export default function Header({ onReset }: HeaderProps) {
 	const [isRotating, setIsRotating] = useState(false);
 
 	const handleRotateClick = () => {
 		setIsRotating(true);
+		onReset(); // Reset the messages
 		setTimeout(() => setIsRotating(false), 1000); // Reset after 1 second
 	};
 
@@ -49,5 +54,3 @@ export function Header() {
         </div>
 	);
 }
-
-export default Header;
