@@ -20,7 +20,8 @@ export async function getAllAtividades(linha_id = undefined) {
   try {
     const client = getDBClient();
 
-    let query = "SELECT * FROM atividades";
+    let query =
+      "SELECT * FROM atividades JOIN linhas ON atividades.linha_id = linhas.id";
     let values = [];
 
     // Add filter by linha_id if provided
@@ -58,7 +59,8 @@ export async function getRecentAtividades(linha_id = undefined, limit = 10) {
   try {
     const client = getDBClient();
 
-    let query = "SELECT * FROM atividades";
+    let query =
+      "SELECT * FROM atividades JOIN linhas ON atividades.linha_id = linhas.id";
     let values = [];
 
     // Add filter by linha_id if provided
@@ -72,7 +74,7 @@ export async function getRecentAtividades(linha_id = undefined, limit = 10) {
       values.push(linhaIdInt);
     }
 
-    query += " ORDER BY id DESC LIMIT $" + (values.length + 1);
+    query += " ORDER BY atividades.id DESC LIMIT $" + (values.length + 1);
     values.push(limit);
 
     const result = await client.query(query, values);

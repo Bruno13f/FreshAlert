@@ -50,7 +50,7 @@ router.post("/message", async (req, res) => {
 
     let { message, systemPrompt } = req.body;
     message +=
-      ". Response de forma mais consisa possível, com apenas a resposta pretendida e uma pequena justificaçao apenas, em portugues de portugal.";
+      ". Response de forma mais consisa possível, com apenas a resposta pretendida e uma pequena justificaçao apenas, em inglês.";
 
     // Grab recent activities from the DB to include in the prompt
     const activities = await getRecentAtividades(undefined, 20); // Get last 20 activities
@@ -61,7 +61,9 @@ router.post("/message", async (req, res) => {
         ? `\n\nRecent activities context:\n${activities
             .map(
               (a) =>
-                `- Activity ${a.id}: Linha ${a.linha_id}, Fresh: ${
+                `- Activity ${a.id}: Linha ${a.linha_id}, Fornecedor: ${
+                  a.fornecedor
+                }, Fresh: ${
                   a.is_fresh ? "Yes" : "No"
                 }, Verified: ${formatTimestamp(a.verified_at)}`
             )
