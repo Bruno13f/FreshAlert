@@ -19,6 +19,24 @@ import { getAllAtividades, getRecentAtividades } from "./atividades.js";
 const router = express.Router();
 
 /**
+ * Helper function to format timestamp to readable format
+ * @param {string} timestamp - ISO timestamp string
+ * @returns {string} Formatted date string
+ */
+function formatTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleString("pt-PT", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "Europe/Lisbon",
+  });
+}
+
+/**
  * POST /chat/message - Send a single message to Bedrock
  */
 router.post("/message", async (req, res) => {
@@ -30,7 +48,9 @@ router.post("/message", async (req, res) => {
       return sendResponse(res, response);
     }
 
-    const { message, systemPrompt } = req.body;
+    let { message, systemPrompt } = req.body;
+    message +=
+      ". Response de forma mais consisa possível, com apenas a resposta pretendida e uma pequena justificaçao apenas, em portugues de portugal.";
 
     // Grab recent activities from the DB to include in the prompt
     const activities = await getRecentAtividades(undefined, 20); // Get last 20 activities
@@ -43,7 +63,7 @@ router.post("/message", async (req, res) => {
               (a) =>
                 `- Activity ${a.id}: Linha ${a.linha_id}, Fresh: ${
                   a.is_fresh ? "Yes" : "No"
-                }, Verified: ${a.verified_at}`
+                }, Verified: ${formatTimestamp(a.verified_at)}`
             )
             .join("\n")}`
         : "\n\nNo recent activities available.";
@@ -99,7 +119,7 @@ router.post("/conversation", async (req, res) => {
               (a) =>
                 `- Activity ${a.id}: Linha ${a.linha_id}, Fresh: ${
                   a.is_fresh ? "Yes" : "No"
-                }, Verified: ${a.verified_at}`
+                }, Verified: ${formatTimestamp(a.verified_at)}`
             )
             .join("\n")}`
         : "\n\nNo recent activities available.";
